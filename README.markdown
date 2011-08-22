@@ -19,6 +19,15 @@
 This is a Clojure wrapper around Benedikt Waldvogel's [Java port](http://www.bwaldvogel.de/liblinear-java) of [LIBLINEAR](http://www.csie.ntu.edu.tw/~cjlin/liblinear/), a linear classifier that can handle problems with millions of instances and features.
 Essentially, it is a support vector machine optimized for classes that can be separated without projecting into some fancy-pants kernel space.
 
+Note: Alpha release
+===================
+Clj-liblinear is under active development for our internal use, and the API may change before the 1.0 release.
+
+
+Examples
+========
+Clj-liblinear takes maps as instances:
+
 ```clojure
 (use '[clj-liblinear.core :only [train predict]])
 (let [train-data (concat
@@ -34,6 +43,35 @@ Essentially, it is a support vector machine optimized for classes that can be se
 ;;=> [0 1]
 ```
 
+If you are concerned only with occurrences (rather than continuous variables), you can use sets.
+These will be expanded into indicator variables for classification.
+For instance, you can easily do simple text classification based on word occurrence:
+
+```clojure
+(use '[clj-liblinear.core :only [train predict]]
+     '[clojure.string :only [split lower-case]])
+
+(def facetweets [{:class 0 :text "grr i am so angry at my iphone"}
+                 {:class 0 :text "this new movie is terrible"}
+                 {:class 0 :text "disappointed that my maximum attention span is 10 seconds"}
+                 {:class 0 :text "damn the weather sucks"}
+
+                 {:class 1 :text "sitting in the park in the sun is awesome"}
+                 {:class 1 :text "eating a burrito life is super good"}
+                 {:class 1 :text "i love weather like this"}
+                 {:class 1 :text "great new album from my favorite band"}])
+
+(let [bags-of-words (map #(-> % :text (split #" ") set) facetweets)
+      model         (train bags-of-words (map :class facetweets))]
+  
+  (map #(predict model (into #{} (split % #" ")))
+       ["damn it all to hell!"
+        "i love everyone"
+        "my iphone is super awesome"
+        "the weather is terrible this sucks"]))
+
+;; => (0 1 1 0)
+```
 
 
 Install
