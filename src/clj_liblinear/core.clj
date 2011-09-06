@@ -48,7 +48,10 @@
     
     (set-all! prob {:x xs
                     :y ys
-                    :bias bias
+                    ;;Waldvogel's port will add a free dimension when bias > 0; allow our users to more explicitly specify true/false.
+                    :bias (cond (true? bias) 1
+                                (> bias 0) 1
+                                :else 0)
                     :l (count xs)
                     :n (count dimensions)})
     
