@@ -34,7 +34,7 @@
                                   :l2l2_primal SolverType/L2R_L2LOSS_SVC
                                   :l2l1 SolverType/L2R_L1LOSS_SVC_DUAL
                                   :multi SolverType/MCSVM_CS
-                                  :l1l2 SolverType/L1R_L2LOSS_SVC
+                                  :l1l2_primal SolverType/L1R_L2LOSS_SVC
                                   :l1lr SolverType/L1R_LR
                                   :l2lr SolverType/L2R_LR)
                     c eps)
