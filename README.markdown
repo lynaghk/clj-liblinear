@@ -98,6 +98,10 @@ If you are using `cake`, for instance, open up `<your repo>/.cake/config` and ad
     project.classpath = vendor/clj-liblinear/src
 
 
+More details
+============
+
+See the official page for more details: [http://keminglabs.com/clj-liblinear/](http://keminglabs.com/clj-liblinear/).
 
 
 Thanks
