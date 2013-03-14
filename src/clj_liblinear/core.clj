@@ -6,11 +6,6 @@
                                     Parameter
                                     SolverType)))
 
-(defmacro set-all! [obj m]
-  `(do ~@(map (fn [[k# v#]]
-                `(set! (. ~obj ~k#) ~v#))
-              m)
-       ~obj))
 
 (defn feature-nodes [x dimensions]
   (cond
@@ -45,15 +40,14 @@
                             xs))
         ys (into-array Integer/TYPE ys)
         prob (new Problem)]
-    
-    (set-all! prob {:x xs
-                    :y ys
-                    ;;Waldvogel's port will add a free dimension when bias > 0; allow our users to more explicitly specify true/false.
-                    :bias (cond (true? bias) 1
+
+    (set! (.x prob) xs)
+    (set! (.y prob) ys)
+    (set! (.bias prob) (cond (true? bias) 1
                                 (> bias 0) 1
-                                :else 0)
-                    :l (count xs)
-                    :n (count dimensions)})
+                                :else 0))
+    (set! (.l prob) (count xs))
+    (set! (.n prob) (count dimensions))
     
     ;;Train and return the model
     {:liblinear-model (Linear/train prob params)
@@ -62,3 +56,17 @@
 (defn predict [model x]
   (Linear/predict (:liblinear-model model)
                           (into-array (feature-nodes x (:dimensions model)))))
+
+(defn save-model 
+  "Writes the model out to two files specified by the base-file-name which should be a path and base file name. The extention .bin is added to the serialized java model and .edn is added to the clojure dimensions data."
+  [model base-file-name]
+  (with-open [out-file (clojure.java.io/writer (str base-file-name ".bin"))]
+    (Linear/saveModel out-file (:liblinear-model model)))
+  (spit  (str base-file-name ".edn") (:dimensions model)))
+
+(defn load-model 
+  "Reads a useable model from a pair of files specified by base-file-name. A file with the .bin extension should contain the serialized java model and the .edn file should contain the serialized (edn) clojure dimensions data."
+  [base-file-name]
+  (let [mdl (Linear/loadModel (clojure.java.io/reader (str base-file-name ".bin")))
+        dimensions (read-string (slurp (str base-file-name ".edn")))]
+    {:liblinear-model mdl :dimensions dimensions}))
