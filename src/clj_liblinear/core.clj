@@ -3,11 +3,13 @@
   (:require [clojure.set :refer [union]]
             [clojure.edn :refer [read-string]])
   (:import (de.bwaldvogel.liblinear FeatureNode
+                                    Model
                                     Linear
                                     Problem
                                     Parameter
                                     SolverType)))
 
+(set! *warn-on-reflection* true)
 
 (defn feature-nodes [x dimensions]
   (cond
@@ -37,7 +39,7 @@
                     c eps)
 
         dimensions (dimensions xs)
-        xs (into-array (map (fn [instance] (into-array (sort-by #(.index %)
+        xs (into-array (map (fn [instance] (into-array (sort-by #(.index ^FeatureNode %)
                                                                (feature-nodes instance dimensions))))
                             xs))
         ys (into-array Double/TYPE ys)
@@ -63,7 +65,7 @@
   "Writes the model out to two files specified by the base-file-name which should be a path and base file name. The extention .bin is added to the serialized java model and .edn is added to the clojure dimensions data."
   [model base-file-name]
   (with-open [out-file (clojure.java.io/writer (str base-file-name ".bin"))]
-    (Linear/saveModel out-file (:liblinear-model model)))
+    (Linear/saveModel out-file ^Model (:liblinear-model model)))
   (spit  (str base-file-name ".edn") (:dimensions model)))
 
 (defn load-model
