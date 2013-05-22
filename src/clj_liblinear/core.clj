@@ -38,7 +38,7 @@
         xs (into-array (map (fn [instance] (into-array (sort-by #(.index %)
                                                                (feature-nodes instance dimensions))))
                             xs))
-        ys (into-array Integer/TYPE ys)
+        ys (into-array Double/TYPE ys)
         prob (new Problem)]
 
     (set! (.x prob) xs)
