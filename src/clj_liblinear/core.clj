@@ -1,5 +1,7 @@
 (ns clj-liblinear.core
-  (:use [clojure.set :only [union]])
+  (:refer-clojure :exclude [read-string])
+  (:require [clojure.set :refer [union]]
+            [clojure.edn :refer [read-string]])
   (:import (de.bwaldvogel.liblinear FeatureNode
                                     Linear
                                     Problem
