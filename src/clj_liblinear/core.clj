@@ -9,20 +9,20 @@
 
 (defn feature-nodes [x dimensions]
   (cond
-   (map? x) (for [[k v] x] (FeatureNode. (k dimensions) v))
-   (set? x) (for [v x :when (dimensions v)] (FeatureNode. (dimensions v ) 1))))
+   (map? x) (for [[k v] x] (FeatureNode. (get dimensions k 1) v))
+   (set? x) (for [v x :when (dimensions v)] (FeatureNode. (get dimensions v 1) 1))))
 
 (defn dimensions
   "Get all of the dimensions in a collection of map/set instances, return a map of dimension -> index"
   [xs]
   (let [dimnames (cond (every? map? xs) (into #{} (flatten (map keys xs)))
                        (every? set? xs) (apply union xs))]
-    (into {} (map vector dimnames (range 1 (inc (count dimnames)))))))
+    (into {} (map vector (cons "_MISSING_" dimnames) (range 1 (+ 2 (count dimnames)))))))
 
 (defn train
   "Train a LIBLINEAR model on a collection of maps or sets, xs, and a collection of their integer classes, ys."
-  [xs ys & {:keys [c eps algorithm bias]
-                      :or {c 1, eps 0.1, algorithm :l2l2, bias 0}}]
+  [xs ys & {:keys [c eps algorithm bias cross-fold]
+                      :or {c 1, eps 0.1, algorithm :l2l2, bias 0, cross-fold nil}}]
   (let [params (new Parameter (condp = algorithm
                                   :l2lr_primal SolverType/L2R_LR
                                   :l2l2 SolverType/L2R_L2LOSS_SVC_DUAL
@@ -38,8 +38,9 @@
         xs (into-array (map (fn [instance] (into-array (sort-by #(.index %)
                                                                (feature-nodes instance dimensions))))
                             xs))
-        ys (into-array Integer/TYPE ys)
-        prob (new Problem)]
+        ys (into-array Double/TYPE ys)
+        prob (new Problem)
+        target (make-array Double/TYPE (count ys))]
 
     (set! (.x prob) xs)
     (set! (.y prob) ys)
@@ -49,8 +50,10 @@
     (set! (.l prob) (count xs))
     (set! (.n prob) (count dimensions))
     
+    (when cross-fold (Linear/crossValidation prob params cross-fold target))
     ;;Train and return the model
-    {:liblinear-model (Linear/train prob params)
+    {:target          target
+     :liblinear-model (Linear/train prob params)
      :dimensions dimensions}))
 
 (defn predict [model x]
