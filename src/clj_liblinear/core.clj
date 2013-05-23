@@ -23,6 +23,16 @@
                        (every? set? xs) (apply union xs))]
     (into {} (map vector (cons "_MISSING_" dimnames) (range 1 (+ 2 (count dimnames)))))))
 
+(defn- bias-feature [dims] (FeatureNode. (inc (count dims)) 1))
+
+(defn- feature-array
+  "Features are sorted by index. If bias is active, an extra feature is added."
+  [bias dims instance]
+  (let [nodes (sort-by #(.index ^FeatureNode %) (feature-nodes instance dims))]
+    (if (pos? bias)
+      (into-array (concat nodes [(bias-feature dims)]))
+      (into-array nodes))))
+
 (defn train
   "Train a LIBLINEAR model on a collection of maps or sets, xs, and a collection of their integer classes, ys."
   [xs ys & {:keys [c eps algorithm bias cross-fold]
@@ -37,20 +47,17 @@
                                 :l1lr SolverType/L1R_LR
                                 :l2lr SolverType/L2R_LR)
                     c eps)
-
+        bias       (if (or (true? bias) (pos? bias)) 1 0)
         dimensions (dimensions xs)
-        xs (into-array (map (fn [instance] (into-array (sort-by #(.index ^FeatureNode %)
-                                                               (feature-nodes instance dimensions))))
-                            xs))
-        ys (into-array Double/TYPE ys)
-        prob (new Problem)
-        bias* (if (or (true? bias) (pos? bias)) 1 0)]
+        xs         (into-array (map #(feature-array bias dimensions %) xs))
+        ys         (into-array Double/TYPE ys)
+        prob       (new Problem)]
 
     (set! (.x prob) xs)
     (set! (.y prob) ys)
-    (set! (.bias prob) bias*)
+    (set! (.bias prob) bias)
     (set! (.l prob) (count xs))
-    (set! (.n prob) (+ (count dimensions) bias*))
+    (set! (.n prob) (+ (count dimensions) bias))
 
     ;;Train and return the model
     {:target          (when cross-fold 
