@@ -43,16 +43,15 @@
                                                                (feature-nodes instance dimensions))))
                             xs))
         ys (into-array Double/TYPE ys)
-        prob (new Problem)]
+        prob (new Problem)
+        bias* (if (or (true? bias) (pos? bias)) 1 0)]
 
     (set! (.x prob) xs)
     (set! (.y prob) ys)
-    (set! (.bias prob) (cond (true? bias) 1
-                             (> bias 0) 1
-                             :else 0))
+    (set! (.bias prob) bias*)
     (set! (.l prob) (count xs))
-    (set! (.n prob) (count dimensions))
-    
+    (set! (.n prob) (+ (count dimensions) bias*))
+    (println (.bias prob))
     
     ;;Train and return the model
     {:target          (when cross-fold 
