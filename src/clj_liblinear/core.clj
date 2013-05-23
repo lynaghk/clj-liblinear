@@ -13,15 +13,15 @@
 
 (defn feature-nodes [x dimensions]
   (cond
-   (map? x) (for [[k v] x] (FeatureNode. (get dimensions k 1) v))
-   (set? x) (for [v x :when (dimensions v)] (FeatureNode. (get dimensions v 1) 1))))
+   (map? x) (for [[k v] x :when (contains? dimensions k)] (FeatureNode. (get dimensions k) v))
+   (set? x) (for [v x :when (dimensions v)] (FeatureNode. (get dimensions v) 1))))
 
 (defn dimensions
   "Get all of the dimensions in a collection of map/set instances, return a map of dimension -> index"
   [xs]
   (let [dimnames (cond (every? map? xs) (into #{} (flatten (map keys xs)))
                        (every? set? xs) (apply union xs))]
-    (into {} (map vector (cons "_MISSING_" dimnames) (range 1 (+ 2 (count dimnames)))))))
+    (into {} (map vector dimnames (range 1 (inc (count dimnames)))))))
 
 (defn- bias-feature [dims] (FeatureNode. (inc (count dims)) 1))
 
@@ -32,6 +32,10 @@
     (if (pos? bias)
       (into-array (concat nodes [(bias-feature dims)]))
       (into-array nodes))))
+
+(defn- correct-predictions
+  [target labels]
+  (count (filter true? (map = target labels))))
 
 (defn train
   "Train a LIBLINEAR model on a collection of maps or sets, xs, and a collection of their integer classes, ys."
@@ -63,13 +67,15 @@
     {:target          (when cross-fold 
                         (let [target (make-array Double/TYPE (count ys))]
                           (Linear/crossValidation prob params cross-fold target)
+                          (println (format "Cross Validation Accuracy = %g%%%n"
+                                     (* 100.0 (/ (correct-predictions target ys) (count target)))))
                           target))
      :liblinear-model (Linear/train prob params)
      :dimensions dimensions}))
 
 (defn predict [model x]
-  (Linear/predict (:liblinear-model model)
-                  (into-array (feature-nodes x (:dimensions model)))))
+  (let [m ^Model (:liblinear-model model)]
+    (Linear/predict m (feature-array (.getBias m) (:dimensions model) x))))
 
 (defn save-model
   "Writes the model out to two files specified by the base-file-name which should be a path and base file name. The extention .bin is added to the serialized java model and .edn is added to the clojure dimensions data."
