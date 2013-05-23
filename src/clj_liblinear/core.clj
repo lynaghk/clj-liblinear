@@ -51,8 +51,7 @@
     (set! (.bias prob) bias*)
     (set! (.l prob) (count xs))
     (set! (.n prob) (+ (count dimensions) bias*))
-    (println (.bias prob))
-    
+
     ;;Train and return the model
     {:target          (when cross-fold 
                         (let [target (make-array Double/TYPE (count ys))]
