@@ -57,7 +57,8 @@
     ;;Train and return the model
     {:target          (when cross-fold 
                         (let [target (make-array Double/TYPE (count ys))]
-                          (Linear/crossValidation prob params cross-fold target)))
+                          (Linear/crossValidation prob params cross-fold target)
+                          target))
      :liblinear-model (Linear/train prob params)
      :dimensions dimensions}))
 
