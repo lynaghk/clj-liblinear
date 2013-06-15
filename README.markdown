@@ -19,13 +19,19 @@
 This is a Clojure wrapper around Benedikt Waldvogel's [Java port](http://www.bwaldvogel.de/liblinear-java) of [LIBLINEAR](http://www.csie.ntu.edu.tw/~cjlin/liblinear/), a linear classifier that can handle problems with millions of instances and features.
 Essentially, it is a support vector machine optimized for classes that can be separated without projecting into some fancy-pants kernel space.
 
-Note: Alpha release
-===================
-Clj-liblinear is under active development for our internal use, and the API may change before the 1.0 release.
+## Install
+
+Add
+
+```clojure
+[clj-liblinear "0.1.0"]
+```
+
+to the `:dependencies` vector in your `projects.clj` file.
 
 
-Examples
-========
+## Examples
+
 Clj-liblinear takes maps as instances:
 
 ```clojure
@@ -73,39 +79,7 @@ For instance, you can easily do simple text classification based on word occurre
 ;; => (0 1 1 0)
 ```
 
-
-Install
-=======
-
-Add
-
-```clojure
-[clj-liblinear "0.0.1-SNAPSHOT"]
-```
-
-to the `:dependencies` vector in your `projects.clj` file, then run `cake deps` or `lein deps`.
-
-If you want to be on the bleeding edge, add this git repository as a submodule on your project:
-
-```bash
-mkdir vendor
-git submodule add https://github.com/lynaghk/clj-liblinear vendor/clj-liblinear
-```
-
-and then setup the classpath appropriately.
-If you are using `cake`, for instance, open up `<your repo>/.cake/config` and add the line
-
-    project.classpath = vendor/clj-liblinear/src
-
-
-More details
-============
-
-See the official page for more details: [http://keminglabs.com/clj-liblinear/](http://keminglabs.com/clj-liblinear/).
-
-
-Thanks
-======
+## Thanks
 The National Taiwan University Machine Learning Group for [LIBLINEAR](http://www.csie.ntu.edu.tw/~cjlin/liblinear/), and Benedikt Waldvogel his [Java transliteration](http://www.bwaldvogel.de/liblinear-java).
 
 This project is sponsored by [Keming Labs](http://keminglabs.com), a technical design studio specializing in data visualization.
