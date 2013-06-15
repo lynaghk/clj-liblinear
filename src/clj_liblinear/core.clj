@@ -13,8 +13,8 @@
 
 (defn feature-nodes [x dimensions]
   (cond
-    (map? x) (for [[k v] x] (FeatureNode. (k dimensions) v))
-    (set? x) (for [v x :when (dimensions v)] (FeatureNode. (dimensions v ) 1))))
+   (map? x) (for [[k v] x :when (contains? dimensions k)] (FeatureNode. (get dimensions k) v))
+   (set? x) (for [v x :when (dimensions v)] (FeatureNode. (get dimensions v) 1))))
 
 (defn dimensions
   "Get all of the dimensions in a collection of map/set instances, return a map of dimension -> index"
@@ -23,10 +23,24 @@
                        (every? set? xs) (apply union xs))]
     (into {} (map vector dimnames (range 1 (inc (count dimnames)))))))
 
+(defn- bias-feature [dims] (FeatureNode. (inc (count dims)) 1))
+
+(defn- feature-array
+  "Features are sorted by index. If bias is active, an extra feature is added."
+  [bias dims instance]
+  (let [nodes (sort-by #(.index ^FeatureNode %) (feature-nodes instance dims))]
+    (if (pos? bias)
+      (into-array (concat nodes [(bias-feature dims)]))
+      (into-array nodes))))
+
+(defn- correct-predictions
+  [target labels]
+  (count (filter true? (map = target labels))))
+
 (defn train
   "Train a LIBLINEAR model on a collection of maps or sets, xs, and a collection of their integer classes, ys."
-  [xs ys & {:keys [c eps algorithm bias]
-            :or {c 1, eps 0.1, algorithm :l2l2, bias 0}}]
+  [xs ys & {:keys [c eps algorithm bias cross-fold]
+                      :or {c 1, eps 0.1, algorithm :l2l2, bias 0, cross-fold nil}}]
   (let [params (new Parameter (condp = algorithm
                                 :l2lr_primal SolverType/L2R_LR
                                 :l2l2 SolverType/L2R_L2LOSS_SVC_DUAL
@@ -37,29 +51,31 @@
                                 :l1lr SolverType/L1R_LR
                                 :l2lr SolverType/L2R_LR)
                     c eps)
-
+        bias       (if (or (true? bias) (pos? bias)) 1 0)
         dimensions (dimensions xs)
-        xs (into-array (map (fn [instance] (into-array (sort-by #(.index ^FeatureNode %)
-                                                               (feature-nodes instance dimensions))))
-                            xs))
-        ys (into-array Double/TYPE ys)
-        prob (new Problem)]
+        xs         (into-array (map #(feature-array bias dimensions %) xs))
+        ys         (into-array Double/TYPE ys)
+        prob       (new Problem)]
 
     (set! (.x prob) xs)
     (set! (.y prob) ys)
-    (set! (.bias prob) (cond (true? bias) 1
-                             (> bias 0) 1
-                             :else 0))
+    (set! (.bias prob) bias)
     (set! (.l prob) (count xs))
-    (set! (.n prob) (count dimensions))
+    (set! (.n prob) (+ (count dimensions) bias))
 
     ;;Train and return the model
-    {:liblinear-model (Linear/train prob params)
+    {:target          (when cross-fold 
+                        (let [target (make-array Double/TYPE (count ys))]
+                          (Linear/crossValidation prob params cross-fold target)
+                          (println (format "Cross Validation Accuracy = %g%%%n"
+                                     (* 100.0 (/ (correct-predictions target ys) (count target)))))
+                          target))
+     :liblinear-model (Linear/train prob params)
      :dimensions dimensions}))
 
 (defn predict [model x]
-  (Linear/predict (:liblinear-model model)
-                  (into-array (feature-nodes x (:dimensions model)))))
+  (let [m ^Model (:liblinear-model model)]
+    (Linear/predict m (feature-array (.getBias m) (:dimensions model) x))))
 
 (defn save-model
   "Writes the model out to two files specified by the base-file-name which should be a path and base file name. The extention .bin is added to the serialized java model and .edn is added to the clojure dimensions data."
