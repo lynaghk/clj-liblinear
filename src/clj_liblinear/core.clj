@@ -56,7 +56,7 @@
         xs         (into-array (map #(feature-array bias dimensions %) xs))
         ys         (into-array Double/TYPE ys)
         prob       (new Problem)]
-    (if weights
+    (when weights
       (.setWeights params (-> weights first double-array) (-> weights last int-array)))     
     (set! (.x prob) xs)
     (set! (.y prob) ys)
