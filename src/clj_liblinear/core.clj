@@ -39,8 +39,8 @@
 
 (defn train
   "Train a LIBLINEAR model on a collection of maps or sets, xs, and a collection of their integer classes, ys."
-  [xs ys & {:keys [c eps algorithm bias cross-fold]
-                      :or {c 1, eps 0.1, algorithm :l2l2, bias 0, cross-fold nil}}]
+  [xs ys & {:keys [c eps algorithm bias cross-fold weights]
+                      :or {c 1, eps 0.1, algorithm :l2l2, bias 0, cross-fold nil weights nil}}]
   (let [params (new Parameter (condp = algorithm
                                 :l2lr_primal SolverType/L2R_LR
                                 :l2l2 SolverType/L2R_L2LOSS_SVC_DUAL
@@ -56,7 +56,8 @@
         xs         (into-array (map #(feature-array bias dimensions %) xs))
         ys         (into-array Double/TYPE ys)
         prob       (new Problem)]
-
+    (if weights
+      (.setWeights params (-> weights first double-array) (-> weights last int-array)))     
     (set! (.x prob) xs)
     (set! (.y prob) ys)
     (set! (.bias prob) bias)
