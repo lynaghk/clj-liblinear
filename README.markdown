@@ -86,7 +86,6 @@ You can also pass weights to the train method, for example if the major class ha
 (train bags-of-words (map :class facetweets) :weights [[0.1 0.9][ 1 0]])
 ```
 
-
 ## Thanks
 The National Taiwan University Machine Learning Group for [LIBLINEAR](http://www.csie.ntu.edu.tw/~cjlin/liblinear/), and Benedikt Waldvogel his [Java transliteration](http://www.bwaldvogel.de/liblinear-java).
 
