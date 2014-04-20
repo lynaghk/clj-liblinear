@@ -90,3 +90,32 @@
   (let [mdl (Linear/loadModel (clojure.java.io/reader (str base-file-name ".bin")))
         dimensions (read-string (slurp (str base-file-name ".edn")))]
     {:liblinear-model mdl :dimensions dimensions}))
+
+(defn get-coefficients
+  "Get the nonzero coefficients of a given model, represented as a map from feature name to coefficient value. The intercept corresponds to the (constant) feature named :bias."
+  [model]
+  (let [ ;; Check if the model contains a bias coefficient (intercept).
+        include-bias (<= 0
+                         (.getBias ^de.bwaldvogel.liblinear.Model (:liblinear-model model)))
+        ;; Get a vector of the coefficients (ordered as in the
+        ;; internal liblinear representation.
+        coefficients-vector (-> model
+                                :liblinear-model
+                                (#(.getFeatureWeights
+                                   ^de.bwaldvogel.liblinear.Model %))
+                                vec)
+        ;; Get the indices (in the above ordering) corresponding to
+        ;; the various feature names.
+        feature-indices (if include-bias
+                          (assoc (:dimensions model)
+                            ;; The bias feature is always the last one.
+                            :bias (count coefficients-vector))
+                          (:dimensions model))]
+    ;; Create a hashmap containing the coefficients by name.
+    (into {}
+          (for [[feature-name feature-index] feature-indices
+                :let [coefficient (coefficients-vector
+                                   ;; dec, to start from 0, not 1
+                                   (dec feature-index))]
+                :when (not (zero? coefficient))]
+            [feature-name coefficient]))))
