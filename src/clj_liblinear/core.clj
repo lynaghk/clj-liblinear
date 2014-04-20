@@ -92,11 +92,12 @@
     {:liblinear-model mdl :dimensions dimensions}))
 
 (defn get-coefficients
-  "Get the nonzero coefficients of a given model, represented as a map from feature name to coefficient value. The intercept corresponds to the (constant) feature named :bias."
+  "Get the nonzero coefficients of a given model, represented as a map from feature name to coefficient value.
+The intercept corresponds to the key :intercept."
   [model]
-  (let [ ;; Check if the model contains a bias coefficient (intercept).
-        include-bias (<= 0
-                         (.getBias ^de.bwaldvogel.liblinear.Model (:liblinear-model model)))
+  (let [bias (.getBias ^de.bwaldvogel.liblinear.Model (:liblinear-model model))
+        ;; Check if the model contains a bias coefficient (intercept).
+        include-bias (<= 0 bias)
         ;; Get a vector of the coefficients (ordered as in the
         ;; internal liblinear representation.
         coefficients-vector (-> model
@@ -110,15 +111,25 @@
                           (assoc (:dimensions model)
                             ;; The bias feature is always the last one.
                             :bias (count coefficients-vector))
-                          (:dimensions model))]
-    ;; Create a hashmap containing the coefficients by name.
-    (into {}
-          (for [[feature-name feature-index] feature-indices
-                :let [coefficient (coefficients-vector
-                                   ;; dec, to start from 0, not 1
-                                   (dec feature-index))]
-                :when (not (zero? coefficient))]
-            [feature-name coefficient]))))
+                          (:dimensions model))
+        ;; Create a hashmap containing the coefficients by name.
+        feature-coefficients (into {}
+                                   (for [[feature-name feature-index] feature-indices
+                                         :let [coefficient (coefficients-vector
+                                                            ;; dec, to start from 0, not 1
+                                                            (dec feature-index))]
+                                         :when (not (zero? coefficient))]
+                                     [feature-name coefficient]))]
+    ;; Return the coefficients.
+    (if-let [bias-coefficient (:bias feature-coefficients)]
+      ;; If there is a bias coefficient, replace it with an intercept
+      ;; (defined as the bias coefficient multiplied by the constant
+      ;; value of the bias feature).
+      (assoc (dissoc feature-coefficients
+                     :bias)
+        :intercept (* bias-coefficient bias))
+      ;; Otherwise, just return.
+      feature-coefficients)))
 
 
 (defn reset-random
