@@ -119,3 +119,10 @@
                                    (dec feature-index))]
                 :when (not (zero? coefficient))]
             [feature-name coefficient]))))
+
+
+(defn reset-random
+  "Reset the PRNG used by liblinear.
+This is useful for regression tests and for reproducibility of experiments."
+  []
+  (Linear/resetRandom))
