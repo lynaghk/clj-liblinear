@@ -122,7 +122,7 @@ The intercept corresponds to the key :intercept."
                                      [feature-name coefficient]))]
     ;; Return the coefficients.
     (if-let [bias-coefficient (:bias feature-coefficients)]
-      ;; If there is a bias coefficient, replace it with an intercept
+      ;; If there is a bias coefficient, replace it with the intercept
       ;; (defined as the bias coefficient multiplied by the constant
       ;; value of the bias feature).
       (assoc (dissoc feature-coefficients
