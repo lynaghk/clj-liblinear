@@ -22,10 +22,10 @@
 
 
 (defn generate-logistic-observations
-  "Generate a n pseudorandom observations by a logistic model.
+  "Generate n pseudorandom observations by a logistic model.
 The feature values are iid samples of standard normal distribution.
 The model coefficients are specified as a map from feature name to coefficient value.
-The intercept is specified by feature name :intercept."
+The intercept is specified in feature name :intercept."
   [n coefficients seed]
   (let [;; To make the test consistent, we do not use clojure.core's
         ;; usual rand function here.
