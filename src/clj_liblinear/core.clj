@@ -90,3 +90,50 @@
   (let [mdl (Linear/loadModel (clojure.java.io/reader (str base-file-name ".bin")))
         dimensions (read-string (slurp (str base-file-name ".edn")))]
     {:liblinear-model mdl :dimensions dimensions}))
+
+(defn get-coefficients
+  "Get the nonzero coefficients of a given model, represented as a map from feature name to coefficient value.
+The intercept corresponds to the key :intercept."
+  [model]
+  (let [bias (.getBias ^de.bwaldvogel.liblinear.Model (:liblinear-model model))
+        ;; Check if the model contains a bias coefficient (intercept).
+        include-bias (<= 0 bias)
+        ;; Get a vector of the coefficients (ordered as in the
+        ;; internal liblinear representation.
+        coefficients-vector (-> model
+                                :liblinear-model
+                                (#(.getFeatureWeights
+                                   ^de.bwaldvogel.liblinear.Model %))
+                                vec)
+        ;; Get the indices (in the above ordering) corresponding to
+        ;; the various feature names.
+        feature-indices (if include-bias
+                          (assoc (:dimensions model)
+                            ;; The bias feature is always the last one.
+                            :bias (count coefficients-vector))
+                          (:dimensions model))
+        ;; Create a hashmap containing the coefficients by name.
+        feature-coefficients (into {}
+                                   (for [[feature-name feature-index] feature-indices
+                                         :let [coefficient (coefficients-vector
+                                                            ;; dec, to start from 0, not 1
+                                                            (dec feature-index))]
+                                         :when (not (zero? coefficient))]
+                                     [feature-name coefficient]))]
+    ;; Return the coefficients.
+    (if-let [bias-coefficient (:bias feature-coefficients)]
+      ;; If there is a bias coefficient, replace it with the intercept
+      ;; (defined as the bias coefficient multiplied by the constant
+      ;; value of the bias feature).
+      (assoc (dissoc feature-coefficients
+                     :bias)
+        :intercept (* bias-coefficient bias))
+      ;; Otherwise, just return.
+      feature-coefficients)))
+
+
+(defn reset-random
+  "Reset the PRNG used by liblinear.
+This is useful for regression tests and for reproducibility of experiments."
+  []
+  (Linear/resetRandom))
