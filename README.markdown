@@ -79,6 +79,13 @@ For instance, you can easily do simple text classification based on word occurre
 ;; => (0 1 1 0)
 ```
 
+
+
+You can also pass weights to the train method, for example if the major class had 100k observations and the minor class had 10k observations, you might want to call:
+```clojure
+(train bags-of-words (map :class facetweets) :weights [[0.1 0.9][ 1 0]])
+```
+
 ## Thanks
 The National Taiwan University Machine Learning Group for [LIBLINEAR](http://www.csie.ntu.edu.tw/~cjlin/liblinear/), and Benedikt Waldvogel his [Java transliteration](http://www.bwaldvogel.de/liblinear-java).
 
