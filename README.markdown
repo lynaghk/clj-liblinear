@@ -19,6 +19,19 @@
 This is a Clojure wrapper around Benedikt Waldvogel's [Java port](http://www.bwaldvogel.de/liblinear-java) of [LIBLINEAR](http://www.csie.ntu.edu.tw/~cjlin/liblinear/), a linear classifier that can handle problems with millions of instances and features.
 Essentially, it is a support vector machine optimized for classes that can be separated without projecting into some fancy-pants kernel space.
 
+
+## Deprecation notice
+
+I wrote this library nearly 4 years ago, before I really understood Clojure.
+I'm not taking issues / pull requests against this library, since it needs a full redesign.
+Leaving it online just so you can see some examples of Clojure interop with a Java library.
+If the current API or performance is not what you need, your best bet is to just dig around and copy/paste what you need into your specific application.
+
+cheers,
+
+Kevin
+
+
 ## Install
 
 Add
